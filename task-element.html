@@ -1,13 +1,66 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
 
 <dom-module id="task-element">
   <template>
     <style>
       :host {
+        --pending-color: #E5E059;
+        --done-color: #BDD358;
+        --canceled-color: #E5625E;
         display: block;
+        font-size: var(--task-element-font-size, 16px);
+        background-color: var(--task-element-bg-color, #FFFFFF);
       }
+      .task {
+        align-items: center;
+        border: 1px solid var(--task-element-border-color, transparent);
+        border-radius: 5px;
+        display: flex;
+        flex-direction: row;
+        padding: 1em;
+      }
+      .task__buttonset {
+        margin-left: auto;
+      }
+      button {
+        appearance: none;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        border: 2px solid var(--task-element-border-color, transparent);
+        border-radius: 5px;
+        padding: .5em 1em;
+      }
+      .task.pending, .btn.pending {
+        background-color: var(--pending-color);
+      }
+      .task.done, .btn.done {
+        background-color: var(--done-color);
+      }
+      .task.canceled, .btn.canceled {
+        background-color: var(--canceled-color);
+      }
+      iron-icon + .task__title {
+        margin-left: 1em;
+      }
+
     </style>
-    <h2>Hello [[prop1]]!</h2>
+    <li class$="[[state]]">
+      <iron-icon icon="radio-button-checked"></iron-icon>
+      <span class="task__title">[[title]]</span>
+      <div class="task__buttonset">
+        <template is="dom-if" if=[[_showDone]]>
+          <button class="btn done" on-click="doneEvent"><iron-icon icon="done"></iron-icon></button>
+        </template>
+        <template is="dom-if" if=[[_showCanceled]]>
+          <button class="btn canceled" on-click="canceledEvent"><iron-icon icon="clear"></iron-icon></button>
+        </template>
+        <template is="dom-if" if=[[_showPending]]>
+          <button class="btn pending" on-click="pendingEvent"><iron-icon icon="restore"></iron-icon></button>
+        </template>
+      </div>
+    </li>
   </template>
 
   <script>
@@ -23,11 +76,92 @@
       static get is() { return 'task-element'; }
       static get properties() {
         return {
-          prop1: {
+          key: {
+            type: String,
+            value: 0
+          },
+          title: {
             type: String,
             value: 'task-element'
+          },
+          state: {
+            type: String,
+            computed: 'getState()'
+          },
+          done: {
+            type: Boolean,
+            value: false
+          },
+          canceled: {
+            type: Boolean,
+            value: false
+          },
+          pending: {
+            type: Boolean,
+            value: true
+          },
+          _showCanceled: {
+            type: Boolean,
+            value: false
+          },
+          _showDone: {
+            type: Boolean,
+            value: false
+          },
+          _showPending: {
+            type: Boolean,
+            value: false
           }
         };
+      }
+      getState() {
+        let state = 'task';
+        if (this.done) {
+          this._showPending = true;
+          this._showCanceled = true;
+          this._showDone = false;
+          return state + ' done';
+        } else if (this.canceled) {
+          this._showPending = true;
+          this._showCanceled = false;
+          this._showDone = true;
+          return state + ' canceled';
+        } else {
+          this._showPending = false;
+          this._showCanceled = true;
+          this._showDone = true;
+          return state + ' pending';
+        }
+      }
+      doneEvent() {
+        let doneEvent = new CustomEvent('done', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            key: this.key
+          }
+        });
+        this.dispatchEvent(doneEvent);
+      }
+      canceledEvent() {
+        let canceledEvent = new CustomEvent('canceled', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            key: this.key
+          }
+        });
+        this.dispatchEvent(canceledEvent);
+      }
+      pendingEvent() {
+        let pendingEvent = new CustomEvent('pending', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            key: this.key
+          }
+        });
+        this.dispatchEvent(pendingEvent);
       }
     }
 
